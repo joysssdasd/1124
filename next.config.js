@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
   // Vercel部署优化配置
   images: {
     remotePatterns: [
@@ -20,10 +17,6 @@ const nextConfig = {
   swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
-  },
-  // 环境变量配置
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
   // 性能优化
   poweredByHeader: false,

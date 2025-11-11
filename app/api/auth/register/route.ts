@@ -188,8 +188,8 @@ export async function POST(request: Request) {
         deal_rate: newUser.deal_rate
       },
       session: {
-        access_token: authData.properties?.access_token || 'mock_token',
-        refresh_token: authData.properties?.refresh_token || 'mock_refresh_token'
+        access_token: (authData as any)?.properties?.access_token || 'mock_token',
+        refresh_token: (authData as any)?.properties?.refresh_token || 'mock_refresh_token'
       }
     })
 
