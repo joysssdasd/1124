@@ -1,0 +1,111 @@
+name: Deploy to EdgeOne Page
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: 部署到EdgeOne Page
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 安装依赖
+      run: npm ci --prefer-offline --no-audit
+
+    - name: 运行测试
+      run: npm run test --if-present
+
+    - name: 运行类型检查
+      run: npm run type-check --if-present
+
+    - name: 运行代码检查
+      run: npm run lint --if-present
+
+    - name: 设置环境变量
+      run: |
+        echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env.production
+        echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env.production
+        echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" >> .env.production
+        echo "TENCENT_SECRET_ID=${{ secrets.TENCENT_SECRET_ID }}" >> .env.production
+        echo "TENCENT_SECRET_KEY=${{ secrets.TENCENT_SECRET_KEY }}" >> .env.production
+
+    - name: 构建项目
+      run: npm run build
+      env:
+        NODE_ENV: production
+
+    - name: 优化构建产物
+      run: node scripts/optimize-build.js
+
+    - name: 部署到EdgeOne Page
+      run: |
+        # 安装腾讯云CLI
+        pip install --user tencentcloud-sdk-python
+        # 配置CLI
+        tcloud configure set secret_id ${{ secrets.TENCENT_SECRET_ID }}
+        tcloud configure set secret_key ${{ secrets.TENCENT_SECRET_KEY }}
+        # 部署
+        tcloud eo create-deployment \
+          --zone-id ${{ secrets.EDGEONE_ZONE_ID }} \
+          --domain ${{ secrets.EDGEONE_DOMAIN }} \
+          --source-path ./out
+
+    - name: 验证部署
+      run: |
+        # 等待部署完成
+        sleep 30
+        # 检查网站是否可访问
+        curl -f https://${{ secrets.EDGEONE_DOMAIN }}/ || exit 1
+
+    - name: 清理旧版本
+      run: |
+        # 保留最近5个版本
+        tcloud eo list-deployments \
+          --zone-id ${{ secrets.EDGEONE_ZONE_ID }} \
+          --domain ${{ secrets.EDGEONE_DOMAIN }} \
+          | tail -n +6 \
+          | awk '{print $1}' \
+          | xargs -I {} tcloud eo delete-deployment --deployment-id {}
+
+  test:
+    runs-on: ubuntu-latest
+    name: 测试构建
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 安装依赖
+      run: npm ci --prefer-offline --no-audit
+
+    - name: 设置测试环境变量
+      run: |
+        echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env.test
+        echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env.test
+
+    - name: 构建测试
+      run: npm run build
+      env:
+        NODE_ENV: test
+
+    - name: 运行端到端测试
+      run: npm run test:e2e --if-present
