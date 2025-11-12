@@ -401,7 +401,7 @@ export default function Profile() {
 
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleCopyContact(view.post!.user.wechat_id)}
+                          onClick={() => handleCopyContact(view.post?.user?.wechat_id || '')}
                           className="flex-1 py-2 bg-primary-100 text-primary-700 rounded-lg text-sm hover:bg-primary-200 transition-colors flex items-center justify-center gap-1"
                         >
                           <Copy className="w-3 h-3" />
