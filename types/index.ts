@@ -52,6 +52,12 @@ export interface ViewRecord {
   confirmed_deal: boolean
   deal_confirmed_at?: string
   created_at: string
+  post?: Post & {
+    user?: {
+      wechat_id: string
+      deal_rate: number
+    }
+  }
 }
 
 export interface RechargeOrder {
