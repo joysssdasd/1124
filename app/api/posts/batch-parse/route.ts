@@ -68,8 +68,8 @@ ${content}
       console.error('解析AI响应失败:', aiResponse)
 
       // 降级方案：简单正则解析
-      const lines = content.split('\n').filter(line => line.trim())
-      parsedItems = lines.map(line => {
+      const lines = content.split('\n').filter((line: string) => line.trim())
+      parsedItems = lines.map((line: string) => {
         const priceMatch = line.match(/(\d+(?:\.\d+)?)/)
         if (priceMatch) {
           const price = parseFloat(priceMatch[1])
@@ -77,7 +77,7 @@ ${content}
           return { title: title || `商品${parsedItems.length + 1}`, price }
         }
         return null
-      }).filter(item => item !== null)
+      }).filter((item: any) => item !== null)
     }
 
     // 验证解析结果
@@ -89,7 +89,7 @@ ${content}
     }
 
     // 为每个项目添加额外信息
-    const enhancedItems = parsedItems.map((item, index) => ({
+    const enhancedItems = parsedItems.map((item: any, index: number) => ({
       ...item,
       keywords: '', // 需要用户手动填写
       trade_type: parseInt(trade_type),
